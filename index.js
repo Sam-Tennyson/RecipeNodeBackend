@@ -27,7 +27,7 @@ app.use(bodyParser.json())
 // set up mongoose
 // mongoose.connect('mongodb://127.0.0.1:27017/recipeApp', { useNewUrlParser: true, useUnifiedTopology: true })
 
-mongoose.connect(process.env.MONGODB)
+mongoose.connect(process.env.MONGODB, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(()=> {
     console.log('Database connected');
   })

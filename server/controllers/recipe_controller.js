@@ -12,7 +12,7 @@ module.exports = {
             if (authorization && authorization.startsWith("Bearer ")) {
                 token = authorization.split(" ")[1] 
                 let {userId} = commonFunctions.decryptJwt(token)
-                let {title, description, ingredients, directions, image} = req.body
+                let {title, description, ingredients, directions, image, category} = req.body
                 let newData = {
                     title,
                     description,
@@ -20,6 +20,7 @@ module.exports = {
                     ingredients,
                     directions,
                     image,
+                    category,
                 } 
                 
                 const createdCause = await recipeService.create(newData)
@@ -42,17 +43,27 @@ module.exports = {
         try {
             let data = totalCount = null;
 
-            let query
-
             const limitValue = req.query.limit || 10
             const skipValue = req.query.skip || 0
+            const category = req.query.categroy || []
 
+            const filter = {}
+
+            // category filter
+            if (category.length > 0) {
+                filter.category = {$in: category}
+            }
+            
             let {authorization} = req.headers
             if (authorization && authorization.startsWith("Bearer ")) {
+                
                 token = authorization.split(" ")[1] 
+
                 let {userId} = commonFunctions.decryptJwt(token)
-                data = await RecipeModal.find({userId}).populate('userId').limit(limitValue).skip(skipValue)
-                totalCount = await RecipeModal.find({userId}).count()
+                filter.userId = userId
+                
+                data = await RecipeModal.find(filter).populate('userId').limit(limitValue).skip(skipValue)
+                totalCount = await RecipeModal.find(filter).count()
                 res.status(200).json({
                     success: true,
                     data,
@@ -61,16 +72,15 @@ module.exports = {
                 return;
             } 
 
-            data = await RecipeModal.find({}).populate('userId').limit(limitValue).skip(skipValue)
-            totalCount = await RecipeModal.count()
+            data = await RecipeModal.find(filter).populate('userId').limit(limitValue).skip(skipValue)
+            totalCount = await RecipeModal.find(filter).count()
             res.status(200).json({
                 data:{
                     recipeData: data,
                     totalCount,
                 },
             })
-                  
-            // throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
+
         } catch (error) {
             res.status(401).json({
                 error

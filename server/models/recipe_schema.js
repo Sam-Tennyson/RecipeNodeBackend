@@ -13,6 +13,10 @@ const RecipeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "RegisterSchema"
     },
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category'
+    },
     ingredients: {
         type: String,
         // required: true

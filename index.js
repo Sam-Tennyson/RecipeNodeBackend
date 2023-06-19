@@ -9,6 +9,7 @@ const recipe_comment_router = require("./server/routes/recipe_comment_routes");
 const router = require("./server/controllers/image_upload_controller");
 const route_image_upload = require("./server/routes/image_upload_routes");
 const image_controller = require("./server/controllers/image_upload_controller");
+const CategoryRouter = require("./server/routes/category_routes");
 require('dotenv').config()
 
 // set up dependencies
@@ -59,6 +60,8 @@ app.use('/auth/', auth_router);
 app.use('/recipe/',recipe_app_router)
 app.use('/recipe-comment/', recipe_comment_router)
 app.use('/uploads', express.static('uploads')),
+app.use('/category', CategoryRouter)
+
 app.post('/media/upload/', upload.single('image'), image_controller)
 
 app.listen(PORT, (req, res) => {

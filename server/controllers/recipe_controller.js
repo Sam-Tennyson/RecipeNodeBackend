@@ -9,6 +9,7 @@ module.exports = {
         
         try {
             let {authorization} = req.headers
+            console.log(authorization && authorization.startsWith("Bearer "));
             if (authorization && authorization.startsWith("Bearer ")) {
                 token = authorization.split(" ")[1] 
                 let {userId} = commonFunctions.decryptJwt(token)
@@ -29,11 +30,14 @@ module.exports = {
                     createdCause
                 })
                 return;
-            } 
-            throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
+            } else {
+                console.log(">>>>>");
+                throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
+            }
         } catch (error) {
-            res.status(401).json({
-                error
+            console.log(error);
+            res.status(500).json({
+                error: error.message
             })
         }
 

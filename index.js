@@ -41,13 +41,17 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // set up mongoose
-mongoose.connect('mongodb://127.0.0.1:27017/recipeApp', { useNewUrlParser: true, useUnifiedTopology: true })
+// mongoose.connect('mongodb://127.0.0.1:27017/recipeApp', { useNewUrlParser: true, useUnifiedTopology: true })
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 mongoose.connect(process.env.MONGODB, { useNewUrlParser: true, useUnifiedTopology: true })
 =======
 // mongoose.connect(process.env.MONGODB)
 >>>>>>> 8e52d144d4be0be7dd2b3ff63b2175726575a2f2
+=======
+mongoose.connect(process.env.MONGODB)
+>>>>>>> f25f8de367373475d2aa6ede9477c073eaad8359
 .then(()=> {
     console.log('Database connected');
   })

@@ -3,7 +3,7 @@ const { addRecipe, getAllRecipeData, getRecipeDataById, deleteRecipeDataById, up
 
 const recipe_app_router = express.Router()
 recipe_app_router.post("/add-recipe", addRecipe)
-recipe_app_router.get("/get-recipe", getAllRecipeData)
+recipe_app_router.post("/get-recipe", getAllRecipeData)
 recipe_app_router.delete("/get-recipe/:id", deleteRecipeDataById)
 recipe_app_router.get("/get-recipe/:id", getRecipeDataById)
 recipe_app_router.put("/update-recipe/:id", updateRecipeDataById)

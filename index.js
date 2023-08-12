@@ -6,10 +6,8 @@ const auth_router = require("./server/routes/register_route");
 const multer = require("multer");
 const recipe_app_router = require("./server/routes/recipe_routes");
 const recipe_comment_router = require("./server/routes/recipe_comment_routes");
-const router = require("./server/controllers/image_upload_controller");
-const route_image_upload = require("./server/routes/image_upload_routes");
-const image_controller = require("./server/controllers/image_upload_controller");
 const CategoryRouter = require("./server/routes/category_routes");
+const cloudinary = require("cloudinary").v2;
 require('dotenv').config()
 
 // set up dependencies
@@ -27,18 +25,20 @@ app.use(bodyParser.urlencoded())
 // parse application/json
 app.use(bodyParser.json())
 
-// Set up Multer storage configuration
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads'); // Specify the directory where you want to save the uploaded images
-  },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // Generate a unique filename for the uploaded image
+    cb(null, file.originalname);
   }
 });
 
-// Create a Multer instance
 const upload = multer({ storage: storage });
+
+// Configuration 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // set up mongoose
 // mongoose.connect('mongodb://127.0.0.1:27017/recipeApp', { useNewUrlParser: true, useUnifiedTopology: true })
@@ -59,10 +59,18 @@ mongoose.Promise = global.Promise
 app.use('/auth/', auth_router);
 app.use('/recipe/',recipe_app_router)
 app.use('/recipe-comment/', recipe_comment_router)
-app.use('/uploads', express.static('uploads')),
 app.use('/category', CategoryRouter)
 
-app.post('/media/upload/', upload.single('image'), image_controller)
+app.post('/media/upload', upload.single('file'), function(req, res) {
+  cloudinary.uploader.upload(req.file.path, function(error, result) {
+    if (error) {
+      console.error(error);
+      res.sendStatus(500);
+    } else {
+      res.send({image_url: result.secure_url});
+    }
+  });
+});
 
 app.listen(PORT, (req, res) => {
     console.log("Server started", PORT);

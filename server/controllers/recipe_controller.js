@@ -10,9 +10,9 @@ module.exports = {
         try {
             let {authorization} = req.headers
             if (authorization && authorization.startsWith("Bearer ")) {
-                token = authorization.split(" ")[1] 
+                let token = authorization.split(" ")[1] 
                 let {userId} = commonFunctions.decryptJwt(token)
-                let {title, description, ingredients, directions, image} = req.body
+                let {title, description, ingredients, directions, image, category} = req.body
                 let newData = {
                     title,
                     description,
@@ -20,19 +20,23 @@ module.exports = {
                     ingredients,
                     directions,
                     image,
+                    category,
                 } 
-                
                 const createdCause = await recipeService.create(newData)
                 res.status(201).json({
                     success: true,
                     createdCause
                 })
                 return;
-            } 
-            throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
+            } else {
+                console.log(">>>>>");
+                throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
+            }
         } catch (error) {
-            res.status(401).json({
-                error
+            console.log(error);
+            res.status(500).json({
+                success: false,
+                error: err.message,
             })
         }
 
@@ -40,19 +44,29 @@ module.exports = {
     getAllRecipeData: async (req, res) => {
 
         try {
-            let data = totalCount = null;
-
-            let query
-
             const limitValue = req.query.limit || 10
             const skipValue = req.query.skip || 0
+            const {category} =req.body || []
 
+            const filter = {}
+
+            // category filter
+            if (category.length > 0) {
+                filter.category = {$in: category}
+            }
+            
             let {authorization} = req.headers
             if (authorization && authorization.startsWith("Bearer ")) {
-                token = authorization.split(" ")[1] 
+                const token = authorization.split(" ")[1] 
+
                 let {userId} = commonFunctions.decryptJwt(token)
-                data = await RecipeModal.find({userId}).populate('userId').limit(limitValue).skip(skipValue)
-                totalCount = await RecipeModal.find({userId}).count()
+                filter.userId = userId
+
+                let [data, totalCount] = await Promise.all([
+                    RecipeModal.find(filter).populate('userId').limit(limitValue).skip(skipValue),
+                    RecipeModal.find(filter).count()
+                ])
+
                 res.status(200).json({
                     success: true,
                     data,
@@ -60,26 +74,31 @@ module.exports = {
                 })
                 return;
             } 
+            
+            let [data, totalCount] = await Promise.all([
+                RecipeModal.find(filter).populate('userId').limit(limitValue).skip(skipValue),
+                RecipeModal.find(filter).count()
+            ])
 
-            data = await RecipeModal.find({}).populate('userId').limit(limitValue).skip(skipValue)
-            totalCount = await RecipeModal.count()
             res.status(200).json({
                 data:{
                     recipeData: data,
                     totalCount,
                 },
             })
-                  
-            // throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
+
         } catch (error) {
-            res.status(401).json({
-                error
+            res.status(400).json({
+                success: false,
+                error: err.message,
             })
         }
     },
     getRecipeDataById: async (req, res)=> {
         try {
-            const data = await RecipeModal.findById(req.params.id)
+            const data = await Promise.all([
+                RecipeModal.findById(req.params.id)
+            ])
             res.json(data)
         } catch(err) {
             res.status(500).json({
@@ -93,13 +112,17 @@ module.exports = {
         try {
             let {authorization} = req.headers
             if(authorization && authorization.startsWith('Bearer ')){
-                token = authorization.split(" ")[1] 
+                const token = authorization.split(" ")[1] 
                 let {userId} = commonFunctions.decryptJwt(token)
-                const recipe_data = await RecipeModal.findById(req.params.id)
+                const [recipe_data] = await Promise.all([
+                    RecipeModal.findById(req.params.id)
+                ])
                 let {title, description, ingredients, directions, image} = req.body
 
                 if (recipe_data.userId.toString() == userId) {
-                    const data = await RecipeModal.findById(req.params.id)
+                    const [data] = await Promise.all([
+                        RecipeModal.findById(req.params.id)
+                    ])
                     
                     data.title = title
                     data.description = description
@@ -107,7 +130,7 @@ module.exports = {
                     data.directions = directions
                     data.image = image
 
-                    const createdCause = await data.save()
+                    const createdCause = await recipeService.create(data)
                     res.status(200).json({
                         success: true,
                         message: 'Data Updated successfully',
@@ -119,7 +142,8 @@ module.exports = {
             throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
         } catch(err) {
             res.status(400).json({
-                err
+                success: false,
+                error: err.message,
             }); 
         }
     },
@@ -128,13 +152,17 @@ module.exports = {
         try {
             let {authorization} = req.headers
             if(authorization && authorization.startsWith('Bearer ')){
-                token = authorization.split(" ")[1] 
+                const token = authorization.split(" ")[1] 
                 let {userId} = commonFunctions.decryptJwt(token)
-                const data = await RecipeModal.findById(req.params.id)
+                const [data] = await Promise.all([
+                    RecipeModal.findById(req.params.id)
+                ])
                 console.log(userId, data) 
                 if (!data) throw createErrorResponse(MESSAGES.NOT_FOUND, ERROR_TYPES.DATA_NOT_FOUND)
                 if (data.userId.toString() == userId) {
-                    await RecipeModal.findByIdAndRemove(req.params.id)
+                    await Promise.all([
+                        RecipeModal.findByIdAndRemove(req.params.id)
+                    ])
                     res.status(200).json({
                         success: true,
                         message: 'Data Deleted Successfully',
@@ -145,7 +173,8 @@ module.exports = {
             throw createErrorResponse(MESSAGES.UNAUTHORIZED, ERROR_TYPES.UNAUTHORIZED);
         } catch(err) {
             res.status(400).json({
-                err
+                success: false,
+                error: err.message,
             }); 
         }
     }

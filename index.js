@@ -6,6 +6,9 @@ const auth_router = require("./server/routes/register_route");
 const multer = require("multer");
 const recipe_app_router = require("./server/routes/recipe_routes");
 const recipe_comment_router = require("./server/routes/recipe_comment_routes");
+const category_router = require("./server/routes/category_routes");
+const cloudinary = require("cloudinary").v2;
+
 require("dotenv").config();
 
 // Ensure the MONGODB environment variable is defined
@@ -27,6 +30,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded());
 
 // parse application/json
+app.use(bodyParser.json());
+
+// parse application/json
+app.use(bodyParser.json());
+
+const storage = multer.diskStorage({
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dluv8v3gd",
+  api_key: process.env.CLOUDINARY_API_KEY || "293913516795454",
+  api_secret:
+    process.env.CLOUDINARY_API_SECRET || "8UZDKFGrvNKMtw1wJqu7WRQbQro",
+});
 app.use(bodyParser.json());
 
 // set up mongoose
@@ -55,7 +78,21 @@ mongoose.Promise = global.Promise;
 app.use("/auth/", auth_router);
 app.use("/recipe/", recipe_app_router);
 app.use("/recipe-comment/", recipe_comment_router);
+app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static("uploads"));
+app.use("/category/", category_router);
 
-app.listen(PORT, (req, res) => {
+app.post("/media/upload", upload.single("file"), function (req, res) {
+  cloudinary.uploader.upload(req.file.path, function (error, result) {
+    if (error) {
+      console.error(error);
+      res.sendStatus(500);
+    } else {
+      res.send({ image_url: result.secure_url });
+    }
+  });
+});
+
+app.listen(PORT, () => {
   console.log("Server started", PORT);
 });
